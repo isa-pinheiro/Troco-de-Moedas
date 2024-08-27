@@ -1,47 +1,53 @@
-import time
+import timeit
 import sys
-import random
+
 sys.setrecursionlimit(1000000000)
 
-# Função para gerar entradas aleatórias 
-def generate_fixed_value_inputs(n, m, max_coin_value):
-    inputs = []
-    for _ in range(m):
-        value = n  
-        coins = [random.randint(1, max_coin_value) for _ in range(random.randint(1, 10))]
-        inputs.append((value, coins))
-    return inputs
-
-# Função para comparar os algoritmos
-def compare_algorithms(n_sizes, m, max_coin_value):
-    for n in n_sizes:
-        inputs = generate_fixed_value_inputs(n, m, max_coin_value)
+def compare_algorithms_varying_coins(n, max_coins=10):
+    recursive_times = []
+    iterative_times = []
+    coin_sets = [list(range(1, i + 1)) for i in range(1, max_coins + 1)]
+    
+    for coins in coin_sets:
+        # Medição de tempo para a função recursiva com memoização
+        recursive_time = timeit.timeit(lambda: ProbTrocoMin_recursive(n, coins), number=1)
+        recursive_times.append(recursive_time)
         
-        start_time = time.time()
-        for value, coins in inputs:
-            ProbTrocoMin_recursive(value, coins)
-        recursive_time = (time.time() - start_time) / m
+        # Medição de tempo para a função iterativa
+        iterative_time = timeit.timeit(lambda: ProbTrocoMin_iterative(n, coins), number=1)
+        iterative_times.append(iterative_time)
         
-        start_time = time.time()
-        for value, coins in inputs:
-            ProbTrocoMin_iterative(value, coins)
-        iterative_time = (time.time() - start_time) / m
-        
-        print(f"Tamanho da entrada: {n}")
-        print(f"Tempo médio (recursivo com memoização): {recursive_time:.6f} segundos")
-        print(f"Tempo médio (iterativo): {iterative_time:.6f} segundos")
+        print(f"Conjunto de moedas: {coins}")
+        print(f"Tempo (recursivo com memoização): {recursive_time:.6f} segundos")
+        print(f"Tempo (iterativo): {iterative_time:.6f} segundos")
         print()
 
-n_sizes = [10, 50, 100, 500, 1000]
-m = 100  
-max_coin_value = 100
+def compare_algorithms_varying_n(n_sizes, coins):
+    recursive_times = []
+    iterative_times = []
+    
+    for n in n_sizes:
+        value = n
+        
+        # Medição de tempo para a função recursiva com memoização
+        recursive_time = timeit.timeit(lambda: ProbTrocoMin_recursive(value, coins), number=1)
+        recursive_times.append(recursive_time)
+        
+        # Medição de tempo para a função iterativa
+        iterative_time = timeit.timeit(lambda: ProbTrocoMin_iterative(value, coins), number=1)
+        iterative_times.append(iterative_time)
+        
+        print(f"Tamanho da entrada: {n}")
+        print(f"Tempo (recursivo com memoização): {recursive_time:.6f} segundos")
+        print(f"Tempo (iterativo): {iterative_time:.6f} segundos")
+        print()
 
 def ProbTrocoMin_recursive(value, coins):
     # Implementação recursiva com memoização
     memo = {}
-    return helper(value, coins, memo)
+    return ProbTrocoMin_Aux(value, coins, memo)
 
-def helper(currentValue, coins, memo):
+def ProbTrocoMin_Aux(currentValue, coins, memo):
     if currentValue == 0:
         return 0
     if currentValue in memo:
@@ -50,7 +56,7 @@ def helper(currentValue, coins, memo):
     minCoins = float("inf")
     for coin in coins:
         if coin <= currentValue:
-            numCoins = helper(currentValue - coin, coins, memo)
+            numCoins = ProbTrocoMin_Aux(currentValue - coin, coins, memo)
             if numCoins != float("inf"):
                 minCoins = min(minCoins, numCoins + 1)
     
@@ -72,5 +78,11 @@ def ProbTrocoMin_iterative(value, coins):
     
     return minCoins[value] if minCoins[value] != float("inf") else -1
 
+# Teste N variando
+n_sizes = list(range(1, 1001))
+coins = [1, 5, 10, 25, 50, 100]  # Conjunto fixo de moedas
+# compare_algorithms_varying_n(n_sizes, coins)
 
-compare_algorithms(n_sizes, m, max_coin_value)
+# Teste Número de moedas variando
+n = 1000
+compare_algorithms_varying_coins(n)
